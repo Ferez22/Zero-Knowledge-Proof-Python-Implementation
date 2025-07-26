@@ -6,13 +6,21 @@ from datetime import datetime, date, timedelta
 import json
 import hmac
 import base64
+from config import config
 
 class SecureAgeZKProof:
-    def __init__(self, secret_key=None):
-        self.secret_key = secret_key or os.urandom(32)
-        self.min_age = 18
-        self.proof_expiry_hours = 24  # Proofs expire after 24 hours
-        self.qr_folder = "generated_qr_codes"
+    def __init__(self, secret_key=None, test_mode=False):
+        self.secret_key = secret_key or os.urandom(config.SECRET_KEY_SIZE)
+        self.min_age = config.MIN_AGE
+        
+        # Set mode (test or production)
+        if test_mode:
+            config.set_test_mode()
+        else:
+            config.set_production_mode()
+            
+        self.proof_expiry_hours = config.PROOF_EXPIRY_HOURS
+        self.qr_folder = config.QR_FOLDER
         self._ensure_qr_folder()
     
     def _ensure_qr_folder(self):
@@ -98,7 +106,7 @@ class SecureAgeZKProof:
         filepath = os.path.join(self.qr_folder, filename)
         
         # Generate QR code
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr = qrcode.QRCode(version=1, box_size=config.QR_BOX_SIZE, border=config.QR_BORDER)
         qr.add_data(json.dumps(proof_data))
         qr.make(fit=True)
         
@@ -109,9 +117,17 @@ class SecureAgeZKProof:
 
 # Enhanced usage with better security
 def main():
+    # Ask user for test mode
+    test_mode = input("Run in test mode? (y/n): ").lower().startswith('y')
+    
     # In a real system, this key would be stored securely
-    secret_key = os.urandom(32)
-    age_prover = SecureAgeZKProof(secret_key)
+    secret_key = os.urandom(config.SECRET_KEY_SIZE)
+    age_prover = SecureAgeZKProof(secret_key, test_mode=test_mode)
+    
+    if test_mode:
+        print("Running in TEST MODE - QR codes will expire in 1 minute")
+    else:
+        print("Running in PRODUCTION MODE - QR codes will expire in 24 hours")
     
     # User provides their date of birth and ID
     user_id = input("Enter your user ID: ")
