@@ -32,6 +32,7 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
   const [generatedProof, setGeneratedProof] =
     useState<GeneratedProofResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +44,7 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
 
     setIsGenerating(true);
     setError(null);
+    setQrCodeImage(null);
 
     try {
       const response: Response = await fetch(`${backendUrl}/generate`, {
@@ -59,6 +61,9 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
       if (response.ok) {
         const result: GeneratedProofResponse = await response.json();
         setGeneratedProof(result);
+
+        // Load and display the QR code image
+        await loadQRCodeImage(result.qr_code_path);
       } else {
         const errorData = await response.json();
         setError(errorData.error || "Failed to generate proof");
@@ -71,11 +76,47 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
     }
   };
 
+  const loadQRCodeImage = async (qrCodePath: string) => {
+    try {
+      // Convert the backend file path to a URL
+      const imageUrl = `${backendUrl}/qr-code/${encodeURIComponent(
+        qrCodePath
+      )}`;
+
+      // Fetch the image and convert to data URL for display
+      const response = await fetch(imageUrl);
+      if (response.ok) {
+        const blob = await response.blob();
+        const dataUrl = URL.createObjectURL(blob);
+        setQrCodeImage(dataUrl);
+      } else {
+        console.warn("Could not load QR code image, but proof was generated");
+      }
+    } catch (err) {
+      console.warn("Could not load QR code image:", err);
+      // Don't fail the whole process if image loading fails
+    }
+  };
+
+  const downloadQRCode = () => {
+    if (!qrCodeImage || !generatedProof) return;
+
+    const link = document.createElement("a");
+    link.href = qrCodeImage;
+    link.download = `qr_code_${generatedProof.alias}_${
+      new Date().toISOString().split("T")[0]
+    }.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const resetForm = () => {
     setUserId("");
     setBirthDate("");
     setGeneratedProof(null);
     setError(null);
+    setQrCodeImage(null);
   };
 
   return (
@@ -145,6 +186,32 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
             <h4 className="text-sm font-medium text-green-800 mb-2">
               Proof Generated Successfully!
             </h4>
+
+            {/* QR Code Display */}
+            {qrCodeImage && (
+              <div className="mb-4 text-center">
+                <div className="bg-white p-4 rounded-lg border inline-block">
+                  <img
+                    src={qrCodeImage}
+                    alt="Generated QR Code"
+                    className="w-48 h-48 object-contain"
+                  />
+                </div>
+                <div className="mt-3 space-y-2">
+                  <button
+                    onClick={downloadQRCode}
+                    className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm font-medium"
+                  >
+                    📥 Download QR Code
+                  </button>
+                  <p className="text-xs text-gray-600">
+                    Click to download the QR code image
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Proof Details */}
             <div className="space-y-2 text-sm text-green-700">
               <p>
                 <strong>Alias:</strong> {generatedProof.alias}
@@ -161,6 +228,7 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({
                 {new Date(generatedProof.proof.expires_at).toLocaleString()}
               </p>
             </div>
+
             <button
               onClick={resetForm}
               className="mt-3 w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-sm"

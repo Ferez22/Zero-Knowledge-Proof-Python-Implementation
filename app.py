@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from zkp import SecureAgeZKProof
 import os
@@ -23,6 +23,32 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'service': 'ZK Proof Authentication API'
     })
+
+@app.route('/qr-code/<path:filename>', methods=['GET'])
+def serve_qr_code(filename):
+    """Serve QR code images"""
+    try:
+        # Security: ensure the filename is within the generated_qr_codes directory
+        if '..' in filename or filename.startswith('/'):
+            return jsonify({'error': 'Invalid filename'}), 400
+        
+        # Construct the full path to the QR code file
+        qr_code_path = os.path.join(age_prover.qr_folder, filename)
+        
+        # Check if file exists
+        if not os.path.exists(qr_code_path):
+            return jsonify({'error': 'QR code not found'}), 404
+        
+        # Serve the file with proper headers
+        return send_file(
+            qr_code_path,
+            mimetype='image/png',
+            as_attachment=False,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to serve QR code: {str(e)}'}), 500
 
 @app.route('/verify', methods=['POST', 'OPTIONS'])
 def verify_proof():
@@ -82,9 +108,13 @@ def generate_proof():
         # Generate QR code
         qr_filepath, alias = age_prover.generate_qr_code(proof)
         
+        # Extract just the filename from the full path
+        qr_filename = os.path.basename(qr_filepath)
+        
         return jsonify({
             'proof': proof,
-            'qr_code_path': qr_filepath,
+            'qr_code_path': qr_filename,  # Return just the filename
+            'qr_full_path': qr_filepath,  # Keep full path for reference if needed
             'alias': alias,
             'message': 'Proof generated successfully'
         })
@@ -108,5 +138,6 @@ if __name__ == '__main__':
     print("API will be available at: http://localhost:5001")
     print("Frontend should be configured to connect to this URL")
     print("CORS enabled for: http://localhost:3000")
+    print("QR code images will be served from /qr-code/ endpoint")
     
     app.run(debug=True, host='0.0.0.0', port=5001)
