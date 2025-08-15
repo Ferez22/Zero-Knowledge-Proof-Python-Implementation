@@ -53,13 +53,22 @@ const QRScanner: React.FC<QRScannerProps> = ({
 
       setCameraStatus("Initializing scanner...");
 
-      // Check if the container exists
+      // Ensure the container exists and is ready
       if (!containerRef.current) {
         throw new Error("Scanner container not found");
       }
 
-      // Clear any existing content
-      containerRef.current.innerHTML = "";
+      // Clear any existing content and ensure the qr-reader div exists
+      containerRef.current.innerHTML = '<div id="qr-reader"></div>';
+
+      // Wait a moment for the DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Verify the qr-reader element exists
+      const qrReaderElement = document.getElementById("qr-reader");
+      if (!qrReaderElement) {
+        throw new Error("Failed to create scanner container");
+      }
 
       scannerRef.current = new Html5QrcodeScanner(
         "qr-reader",
@@ -113,6 +122,11 @@ const QRScanner: React.FC<QRScannerProps> = ({
     }
     setIsScanning(false);
     setCameraStatus("");
+
+    // Clear the container
+    if (containerRef.current) {
+      containerRef.current.innerHTML = "";
+    }
   };
 
   const decodeQRFromImage = (file: File): Promise<string> => {
@@ -255,11 +269,9 @@ const QRScanner: React.FC<QRScannerProps> = ({
           </div>
 
           {/* Scanner Container */}
-          {isScanning && (
-            <div className="mt-4">
-              <div id="qr-reader" ref={containerRef}></div>
-            </div>
-          )}
+          <div className="mt-4">
+            <div ref={containerRef}></div>
+          </div>
         </div>
       </div>
     </div>
