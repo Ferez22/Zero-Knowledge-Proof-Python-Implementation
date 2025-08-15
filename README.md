@@ -1,42 +1,150 @@
-# Zero-Knowledge Proof (ZKP) Python Implementation
+# Zero-Knowledge Proof Python Implementation
 
-Zero-Knowledge Proofs (ZKP) are a cryptographic concept where one party (the prover) can prove to another party (the verifier) that they know a value, without conveying any information apart from the fact that they know the value. This concept is fundamental in various privacy-preserving technologies, including cryptocurrencies and secure multi-party computations.
+A secure age verification system using zero-knowledge proofs with QR code generation and verification.
 
-The prover does not reveal the actual secret during the interaction, maintaining the secrecy of the information. It's a form of "interactive proof system."
+## Features
 
-This repository contains a simple implementation of Zero-Knowledge Proofs (ZKP) in Python.
+- **Zero-Knowledge Proof Generation**: Create secure proofs without revealing actual birth dates
+- **QR Code Integration**: Generate and scan QR codes for easy verification
+- **Secure Authentication**: HMAC-signed proofs with expiration times
+- **Modern Web Frontend**: React-based interface with camera scanning and file upload
+- **Flask Backend API**: RESTful API for proof verification and generation
 
-## Table of Contents
-1. [Requirements](#requirements)
-2. [Usage](#usage)
-3. [Example](#example)
-4. [License](#license)
+## System Architecture
 
-## Requirements
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend API   │    │   ZK Proof      │
+│   (Next.js)     │◄──►│   (Flask)       │◄──►│   Engine       │
+│                 │    │                 │    │   (Python)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
-The Python version required for this script is Python 3.7+. The script also makes use of the `hashlib`, `os`, and `random` libraries, which are included in the standard Python distribution.
+## Prerequisites
+
+- Python 3.8+
+- Node.js 18+
+- npm or yarn
+
+## Installation & Setup
+
+### 1. Backend Setup
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run the Flask backend
+python app.py
+```
+
+The backend will start on `http://localhost:5001`
+
+### 2. Frontend Setup
+
+```bash
+# Navigate to the frontend directory
+cd notrust
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
 
 ## Usage
 
-The main script is `zkp.py`, which contains the `ZKProof` class. Here's a step-by-step guide on how to use it:
+### Generating QR Codes
 
-1. **Import the `ZKProof` class from the `zkp.py` script.** This class contains the main methods for generating proofs and verifying them.
-2. **Initialize a `ZKProof` object.** When initializing, the object generates a random 'salt' value, used in the hashing process to increase security.
-3. **Generate a proof using a secret value.** Call the `generate_proof` method on the object, passing the secret value you want to prove knowledge of. This will return a hashed value of a randomly generated number. This hashed number is a commitment that the prover sends to the verifier.
-4. **Verify a guessed value.** To verify a guessed value, call the `verify` method on the object, passing the guessed value. This will return `True` if the hashed guessed value matches the stored hashed value, and `False` otherwise.
+1. Open the frontend in your browser
+2. Use the "Generate New Proof" section on the right
+3. Enter a User ID and Date of Birth
+4. Click "Generate QR Code"
+5. The system will create a secure proof and save a QR code image
 
-## Example
+### Authenticating with QR Codes
 
-```python
-zkp = ZKProof()
-x = zkp.generate_proof('secret_value')
-print('Proof:', x)
-response = input('Enter the value to verify: ')
-print('Verified:', zkp.verify(response))
+1. Use the "Authentication" section on the left
+2. Click "Start Camera Scanner" to use your device camera
+3. Or upload a QR code image file
+4. The system will scan and verify the proof
+5. View authentication results and proof details
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `POST /verify` - Verify a ZK proof
+- `POST /generate` - Generate a new ZK proof
+- `GET /config` - Get system configuration
+
+## Security Features
+
+- **HMAC Signatures**: Tamper-proof proof verification
+- **Expiration Times**: Configurable proof validity periods
+- **Minimal Data Exposure**: Only necessary information is revealed
+- **Secure Key Management**: Random secret key generation
+
+## Configuration
+
+Edit `config.py` to modify:
+
+- Minimum age requirements
+- Proof expiration times
+- QR code settings
+- Secret key sizes
+
+## Development
+
+### Backend Development
+
+- The main ZK proof logic is in `zkp.py`
+- Flask API endpoints are in `app.py`
+- Configuration is centralized in `config.py`
+
+### Frontend Development
+
+- React components are in `notrust/src/components/`
+- Main page is `notrust/src/app/page.tsx`
+- Uses Tailwind CSS for styling
+
+## Testing
+
+```bash
+# Test the backend
+python zkp.py
+
+# Test the frontend
+cd notrust
+npm run build
+npm start
 ```
 
-In this example, the script will print the hashed proof and wait for a user input. If the input matches the secret value, it will print `Verified: True`; otherwise, it will print `Verified: False`.
+## File Structure
+
+```
+├── app.py                 # Flask backend API
+├── zkp.py                # Core ZK proof implementation
+├── config.py             # Configuration settings
+├── requirements.txt      # Python dependencies
+├── generated_qr_codes/   # Generated QR code images
+└── notrust/             # Next.js frontend
+    ├── src/
+    │   ├── components/   # React components
+    │   └── app/         # Next.js app router
+    └── package.json
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the terms of the [MIT](https://github.com/codeesura/Zero-Knowledge-Proof-Python-Implementation/blob/main/LICENSE) license. You are free to use, modify, and distribute the code under this license.
+This project is licensed under the MIT License - see the LICENSE file for details.

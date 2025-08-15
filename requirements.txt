@@ -1,2 +1,3 @@
-qrcode
-Pillow
+qrcode[pil]
+flask
+flask-cors
